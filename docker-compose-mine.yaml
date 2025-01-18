@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  api:
+    platform: linux/amd64
+    build:
+      context: ./api
+      dockerfile: Dockerfile-mine
+      args:
+        NODE_VERSION: ${NODE_VERSION:-22.13.0}
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PROXY_URL=${PROXY_URL:-}
+      - DEFAULT_HEADERS=${DEFAULT_HEADERS:-}
+    volumes:
+      - ./.cache:/app/.cache
+    expose:
+      - "3000"
+      - "9223"
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://api:3000}
+      - VITE_WS_URL=${VITE_WS_URL:-ws://api:3000}
+      - VITE_OPENAPI_URL=${VITE_OPENAPI_URL:-http://api:3000/documentation/json}
+    depends_on:
+      - api
+    expose:
+      - "5173"
