@@ -12,6 +12,7 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PROXY_URL=${PROXY_URL:-}
       - DEFAULT_HEADERS=${DEFAULT_HEADERS:-}
+      - API_KEY=${API_KEY:-}
     volumes:
       - cache_data:/app/.cache
     expose:

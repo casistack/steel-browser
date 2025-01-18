@@ -9,6 +9,7 @@ import browserWebSocket from "./plugins/browser-socket";
 import seleniumPlugin from "./plugins/selenium";
 import customBodyParser from "./plugins/custom-body-parser";
 import { sessionsRoutes, seleniumRoutes, actionsRoutes, cdpRoutes } from "./routes";
+import authPlugin from './plugins/auth';
 
 export default function buildFastifyServer(options?: FastifyServerOptions) {
   const server = fastify(options);
@@ -23,6 +24,7 @@ export default function buildFastifyServer(options?: FastifyServerOptions) {
   server.register(browserWebSocket);
   server.register(customBodyParser);
   server.register(browserSessionPlugin);
+  server.register(authPlugin);
 
   // Routes
   server.register(actionsRoutes, { prefix: "/v1" });
