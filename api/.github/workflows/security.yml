@@ -1,0 +1,98 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly
+
+jobs:
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: api
+        run: npm audit --audit-level=high
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: api
+
+      - name: Run Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        env:
+          JAVA_HOME: ${{ runner.java-home }}
+        with:
+          project: 'Steel Browser API'
+          path: 'api'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --failOnCVSS 7
+            --suppress api/.dependency-check-suppressions.xml
+
+      - name: Upload dependency check report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-check-report
+          path: reports
+
+      - name: Check for vulnerable dependencies
+        working-directory: api
+        run: |
+          if [ -f "reports/dependency-check-report.html" ]; then
+            if grep -q "One or more dependencies were identified with known vulnerabilities" "reports/dependency-check-report.html"; then
+              echo "Vulnerabilities found in dependencies"
+              exit 1
+            fi
+          fi
+
+      - name: Slack Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: '#security-alerts'
+          SLACK_COLOR: '#FF0000'
+          SLACK_ICON: https://github.com/security.png?size=48
+          SLACK_MESSAGE: 'Security vulnerabilities found in dependencies!'
+          SLACK_TITLE: 'Security Check Failed'
+          SLACK_USERNAME: 'Security Bot'

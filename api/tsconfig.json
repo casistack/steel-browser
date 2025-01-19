@@ -1,16 +1,25 @@
 {
   "compilerOptions": {
-    "esModuleInterop": true,
+    "target": "ES2020",
     "module": "commonjs",
-    "target": "ESNext",
-    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "outDir": "./build",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "sourceMap": true,
-    "outDir": "build",
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strict": true
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": true,
+    "sourceMap": true
   },
-  "include": ["./src/**/*", "workers/createWorker.ts"],
-  "files": ["./src/types/fastify.d.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build", "**/*.test.ts"]
 }
